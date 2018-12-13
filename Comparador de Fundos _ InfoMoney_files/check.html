@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<!-- saved from url=(0064)https://www.infomoney.com.br/immedia/js/serviceworker/check.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title></title>
+    
+</head>
+<body>
+    <script type="text/javascript">
+        if (/chrome/.test(navigator.userAgent.toLowerCase()) && ("Notification" in window)) {
+            console.log(Notification.permission);
+            window.parent.postMessage(['notification', Notification.permission], '*');
+        }
+    </script>
+
+
+</body></html>

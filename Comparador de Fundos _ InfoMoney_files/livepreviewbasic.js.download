@@ -1,0 +1,213 @@
+﻿ $(document).foundation();
+
+// INÍCIO - Classe helper do LivePreview
+function LivePreviewHelper() {
+    this.pageId = $('#pageId').val();
+    this.templateId = $('#templateId').val();
+    this.masterpageId = $('#MasterId').val();
+    this.routeId = $('#routeId').val();
+
+    this.entityId = $('#entityId').val();
+    this.editType = $('#editTypeCurrent').val();
+    if (this.entityId == undefined)
+        this.entityId = this.pageId;
+    if (this.editType == undefined)
+        this.editType = "Page";
+
+    this.renderWidget = function (widget, customParamenters, isAppend, where, what) {
+        // isAppend(bool) = se deve adicionar o conteudo, where($seletor) = onde deve ser adicionado o conteudo, what($elector) = o que do conteudo retornado será adicionado
+        var widgetId = this.getId(widget.attr('class'));
+        DefaultNewswidgetIdHome = 8;
+        DefaultRouteIdHome = 1;
+
+        $.ajax({
+            type: "POST",
+            url: "/LPApi/RenderWidgetCustom",
+            data: JSON.stringify({
+                RouteId: widgetId == 0 ? DefaultRouteIdHome : this.routeId,
+                WidgetId: widgetId == 0 ? DefaultNewswidgetIdHome : widgetId,
+                CustomParameters: customParamenters
+            }),
+            contentType: "application/json; charset=UTF-8",
+            success: function (data) {
+                if (data) {
+                    if (isAppend && isAppend != undefined) {
+                        if (what != undefined && where != undefined)
+                            where.replaceWith($(what, data).html());
+                        else
+                            widget.append($(data).html());
+                    }
+                    else
+                        widget.html(data);
+                }
+            },
+            error: $.proxy(function (exception) { console.log(exception) }, this)
+        });
+    };
+
+    // Tenta encontrar a class e caso encontre retorna
+    this.tryGetClass = function (classes, name) {
+        var valueClass = '',
+            arrClasses = classes.split(' ');
+
+        for (var i = 0; i < arrClasses.length; i++) {
+            if (arrClasses[i].indexOf(name) > -1) {
+                valueClass = arrClasses[i];
+                break;
+            }
+        }
+
+        return valueClass;
+    };
+
+    // Retorna o Identificador
+    this.getId = function (classes) {
+        var id = 0,
+            valueClass = this.tryGetClass(classes, 'id-');
+
+        if (valueClass != undefined)
+            id = parseInt(valueClass.split('-')[1]);
+
+        return id;
+    };
+}
+// FIM - Classe helper do LivePreview
+
+    // Load PageLoad widgets Async
+    $("[data-ajax-event]").each(function (index, element) {
+        var $widgetElement = $(this);
+
+        if (is_mobile() && $($widgetElement).data('show') == 'desktop')
+            return;
+
+        if (!is_mobile() && $($widgetElement).data('show') == 'mobile')
+            return;
+
+        if ($widgetElement.length > 0 && !$($widgetElement).data('loaded')) {
+            $.get('/LpApi/RenderWidgetAjax?entityId=' + entityId + '&editType=' + editType + '&widgetId=' + $($widgetElement).data('widgetid'), function (data) {                
+                $($widgetElement).append($(data).children());
+                $($widgetElement).attr('data-loaded', 'true');
+                $($widgetElement).foundation();
+            });
+        }
+    });
+
+    // Load Abas Async
+    $(".tabs-title").on('click', function () {
+        var $widgetElement = $(this).parent().next().find('.tabs-panel').eq($(this).index()).find('[data-ajax]');
+
+        if (is_mobile() && $($widgetElement).data('show') == 'desktop')
+            return;
+
+        if (!is_mobile() && $($widgetElement).data('show') == 'mobile')
+            return;
+
+        if ($widgetElement.length > 0 && !$($widgetElement).data('loaded')) {
+            $.get('/LpApi/RenderWidgetAjax?entityId=' + entityId + '&editType=' + editType + '&widgetId=' + $($widgetElement).data('widgetid'), function (data) {                
+                $($widgetElement).append($(data).children());
+                $($widgetElement).attr('data-loaded', 'true');
+                $($widgetElement).foundation();
+            });
+        }
+    });
+
+$(document).ready(function () {
+    var LPHelper = LivePreviewHelper();
+});
+
+   
+String.prototype.format = function () {
+    var pattern = /\{\d+\}/g;
+    var args = arguments;
+    return this.replace(pattern, function (capture) { return args[capture.match(/\d+/)]; });
+}
+
+String.prototype.replaceAll = function (de, para) {
+    var str = this;
+    var pos = str.indexOf(de);
+    while (pos > -1) {
+        str = str.replace(de, para);
+        pos = str.indexOf(de);
+    }
+    return (str);
+}
+
+
+//function loadJQuery(callback, scriptUrl) {
+//    var jQueryUrl = 'http://code.jquery.com/jquery-1.10.1.min.js';
+
+//    if (scriptUrl == undefined)
+//        loadScript(function () {
+//            loadAjaxSetup();
+//            callback();
+//        }, jQueryUrl);
+//    else {
+//        loadScript(function () {
+//            loadScript(function () {
+//                loadAjaxSetup();
+//                callback();
+//            }, scriptUrl);
+//        }, jQueryUrl);
+//    }
+//}
+
+//function loadScript(callback, scriptUrl) {
+//    var t = document,
+//        js,
+//        arrUrl = scriptUrl.split('/'),
+//        id = arrUrl[arrUrl.length - 1],
+//        ref = t.getElementsByTagName('body')[0];
+
+//    if (t.getElementById(id))
+//        callback();
+
+//    else {
+//        js = t.createElement('script'); js.id = id; js.type = "text/javascript"; js.async = true;
+//        js.src = scriptUrl;
+//        js.onload = callback;
+//        js.onreadystatechange = function () {
+//            if (this.readyState == 'complete') callback();
+//        };
+//        ref.appendChild(js);
+//    }
+//}
+
+//// Tratamento de loading de ajax
+//var isLoading = false,
+//    isLoadAjaxSetup = false;
+//if (typeof $ != 'undefined')
+//    loadAjaxSetup();
+
+//function loadAjaxSetup() {
+//    //if (!isLoadAjaxSetup) {
+//    //    isLoadAjaxSetup = true;
+//    //    $.ajaxSetup({
+//    //        beforeSend: function () {
+//    //            $('button').attr('disabled', 'disabled');
+//    //            $('#ui-lp-loading').fadeIn();
+//    //            isLoading = true;
+//    //        },
+//    //        complete: function () {
+//    //            if (isLoading) {
+//    //                $('button').removeAttr('disabled');
+//    //                $('#ui-lp-loading').fadeOut();
+//    //                isLoading = false;
+//    //            }
+//    //        },
+//    //        success: function () {
+//    //            if (isLoading) {
+//    //                $('button').removeAttr('disabled');
+//    //                $('#ui-lp-loading').fadeOut();
+//    //                isLoading = false;
+//    //            }
+//    //        },
+//    //        error: function () {
+//    //            if (isLoading) {
+//    //                $('button').removeAttr('disabled');
+//    //                $('#ui-lp-loading').fadeOut();
+//    //                isLoading = false;
+//    //            }
+//    //        }
+//    //    });
+//    //}
+//}
